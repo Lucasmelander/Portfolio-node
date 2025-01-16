@@ -10,15 +10,15 @@
       <%- include('./partials/home.ejs') %>
       <%- include('./partials/about.ejs') %>
       <%- include('./partials/services.ejs') %>
-      <!-- Pass recommendations data to the recommendations partial -->
       <%- include('./partials/recommendations.ejs', { data: data }) %>
-      <%- include('./partials/portfolio.ejs') %>
+      <!-- Pass cakes data to portfolio partial -->
+      <%- include('./partials/portfolio.ejs', { cakes: cakes }) %>
       <%- include('./partials/contact.ejs') %>
     </div>
     <%- include('./partials/script.ejs') %>
     <script>
       var typed = new Typed(".aboutMe", {
-        strings: <%- JSON.stringify(array) %> ,
+        strings: <%- JSON.stringify(array) %>,
         smartBackspace: true,
         typeSpeed: 100,
         backSpeed: 100,
@@ -29,3 +29,5 @@
     </script>
   </body>
 </html>
+
+
