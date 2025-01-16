@@ -6,8 +6,6 @@
         <p>The cakes I have baked for my clients.</p>
       </div>
     </div>
-    
-    <!-- Filter Buttons -->
     <div class="row">
       <div class="col-xs-12 mx-auto mb-5">
         <button class="btn active" onclick="filterSelection('all')"> Show all</button>
@@ -17,13 +15,12 @@
         <button class="btn" onclick="filterSelection('anniversary')"> Anniversary cakes</button>
       </div>
     </div>
-    
-    <!-- Cake Grid -->
     <div class="row grid">
       <% cakes.forEach(function(cake) { %>
         <div class="hide col-lg-4 col-md-6 col-sm-12 <%= cake.category %>">
           <div class="text-center">
-            <img class="mb-3" src="<%= cake.image %>" alt="<%= cake.alt %>" style="width:100%">
+            <!-- Correct image path, make sure you use /img/ path -->
+            <img class="mb-3" src="/img/<%= cake.name %>" alt="<%= cake.alt %>" style="width:100%">
             <h4><%= cake.header %></h4>
             <p><%= cake.description %></p>
           </div>
@@ -32,20 +29,3 @@
     </div>
   </div>
 </section>
-
-<script>
-  // Function to filter cakes by category
-  function filterSelection(category) {
-    var elements = document.getElementsByClassName('grid')[0].children;
-    for (var i = 0; i < elements.length; i++) {
-      if (category === 'all' || elements[i].classList.contains(category)) {
-        elements[i].style.display = 'block';
-      } else {
-        elements[i].style.display = 'none';
-      }
-    }
-  }
-
-  // Call filterSelection('all') by default to show all cakes
-  filterSelection('all');
-</script>
