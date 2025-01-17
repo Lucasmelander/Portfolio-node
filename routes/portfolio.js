@@ -3,61 +3,112 @@ var router = express.Router();
 const fs = require("fs");
 const path = require("path");
 const bodyParser = require('body-parser');
-var request = require('request');
+const request = require('request');
+var ensureLogIn = require('connect-ensure-login').ensureLoggedIn;
+var ensureLoggedIn = ensureLogIn();
 
 // Use body-parser to handle JSON requests
 const jsonParser = bodyParser.json();
 
-/* POST route to handle new portfolio submissions */
-router.post('/', jsonParser, function(req, res, next) {
-  let rawdata = fs.readFileSync(path.resolve(__dirname, "../data/portfolio.json"));
-  let portfoliosArray = JSON.parse(rawdata);
+/* POST route to add a portfolio item */
+router.post('/', jsonParser, function (req, res) {
+  try {
+    const { name, url } = req.body;
 
-  // Check if the portfolio item already exists based on the name
-  if (portfoliosArray.filter(x => x.name === req.body.name).length === 0) {
-    // Download the image from the provided URL
-    download(req.body.url, req.body.name, function() {
-      console.log('Image download completed');
+    if (!name || !url) {
+      return res.status(400).json({ message: "Name and URL are required." });
+    }
 
-      // After downloading the image, add the new portfolio item
-      const newArray = portfoliosArray.concat([req.body]);
-      
-      // Save the updated portfolio array back to the portfolio.json file
-      fs.writeFileSync(path.resolve(__dirname, "../data/portfolio.json"), JSON.stringify(newArray));
-      
-      // Respond to the client
+    const portfolioPath = path.resolve(__dirname, "../data/portfolio.json");
+    const imagePath = path.resolve(__dirname, "../data/img", name);
+
+    // Read existing portfolio items
+    let portfoliosArray = JSON.parse(fs.readFileSync(portfolioPath));
+
+    // Check if the portfolio item already exists
+    if (portfoliosArray.some((item) => item.name === name)) {
+      return res.status(400).json({ message: "Portfolio item already exists!" });
+    }
+
+    // Download the image and add the portfolio item
+    downloadImage(url, imagePath, (err) => {
+      if (err) {
+        return res.status(500).json({ message: "Failed to download image.", error: err.message });
+      }
+
+      portfoliosArray.push(req.body);
+
+      // Save the updated portfolio array
+      fs.writeFileSync(portfolioPath, JSON.stringify(portfoliosArray, null, 2));
+
       res.status(200).json({ message: "Portfolio item added successfully!" });
     });
-  } else {
-    // Handle case where the item already exists
-    res.status(400).json({ message: "Portfolio item already exists!" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error.", error: error.message });
   }
 });
 
-// Function to download an image
-var download = function(url, filename, callback) {
-  request.head(url, function(err, res, body) {
-    if (err) {
-      console.log('Error downloading image:', err);
-      return;
+/* DELETE route to remove a portfolio item */
+router.delete('/', jsonParser, ensureLoggedIn, function (req, res) {
+  try {
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ message: "Name is required." });
     }
-    // Save the image to the data/img folder
-    request(url).pipe(fs.createWriteStream(path.resolve(__dirname, '../data/img/', filename))).on('close', callback);
-  });
-};
 
-router.delete('/', jsonParser, function(req, res, next) {
-  let rawdata = fs.readFileSync(path.resolve(__dirname, "../data/portfolio.json"));
-  let portfoliosArray = JSON.parse(rawdata);
-  const newArray = portfoliosArray.filter(x => x.name !== req.body.name)
-  if(newArray.length !== portfoliosArray.length) {
-    fs.unlink(path.resolve(__dirname, '../data/img/'+ req.body.name), () => {
-      console.log(req.body.name + " deleted!");
+    const portfolioPath = path.resolve(__dirname, "../data/portfolio.json");
+    const imagePath = path.resolve(__dirname, "../data/img", name);
+
+    // Read existing portfolio items
+    let portfoliosArray = JSON.parse(fs.readFileSync(portfolioPath));
+
+    // Filter out the item to be deleted
+    const updatedArray = portfoliosArray.filter((item) => item.name !== name);
+
+    if (updatedArray.length === portfoliosArray.length) {
+      return res.status(404).json({ message: "Portfolio item not found." });
+    }
+
+    // Delete the image file
+    fs.unlink(imagePath, (err) => {
+      if (err) {
+        console.warn(`Failed to delete image: ${name}.`);
+      } else {
+        console.log(`Image deleted: ${name}`);
+      }
     });
-    fs.writeFileSync(path.resolve(__dirname, "../data/portfolio.json"), JSON.stringify(newArray));
+
+    // Save the updated portfolio array
+    fs.writeFileSync(portfolioPath, JSON.stringify(updatedArray, null, 2));
+
+    res.status(200).json({ message: "Portfolio item deleted successfully!" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error.", error: error.message });
   }
-  res.end();
 });
 
+/* Function to download an image */
+function downloadImage(url, filepath, callback) {
+  request.head(url, (err) => {
+    if (err) {
+      console.error("Error downloading image:", err);
+      return callback(err);
+    }
+    request(url)
+      .pipe(fs.createWriteStream(filepath))
+      .on("close", () => {
+        console.log(`Image saved to: ${filepath}`);
+        callback(null);
+      })
+      .on("error", (err) => {
+        console.error("Error saving image:", err);
+        callback(err);
+      });
+  });
+}
 
 module.exports = router;
+

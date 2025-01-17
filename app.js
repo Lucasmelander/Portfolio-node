@@ -21,7 +21,7 @@ var app = express();
 
 // Session setup
 app.use(session({
-    secret: 'keyboard cat',
+    secret: 'keyboard cat', // Replace with a secure secret for production
     resave: false,
     saveUninitialized: false,
     store: new JsonStore()
@@ -32,16 +32,19 @@ app.use(passport.authenticate('session'));
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-app.use('/img', express.static(path.join(__dirname, 'data', 'img')));
+// Static file serving
+app.use(express.static(path.join(__dirname, 'public'))); // Serves static files from the "public" directory
+app.use('/images', express.static(path.join(__dirname, 'data', 'img')));
+app.use('/bootstrap', express.static(path.join(__dirname, 'node_modules', 'bootstrap', 'dist'))); // Serve Bootstrap files
+app.use(express.static(path.join(__dirname, 'node_modules/jquery/dist/'))); // Serve jQuery files
+app.use(express.static(path.join(__dirname, 'node_modules/typed.js/lib'))); // Serve Typed.js files
+app.use(express.static(path.join(__dirname, 'node_modules/bootstrap-icons'))); // Serve Bootstrap Icons
+
+// Middlewares
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/bootstrap', express.static(path.join(__dirname, 'node_modules', 'bootstrap', 'dist')));
-app.use(express.static(__dirname + '/node_modules/jquery/dist/'));
-app.use(express.static(__dirname + '/node_modules/typed.js/lib'));
-app.use(express.static(__dirname + '/node_modules/bootstrap-icons'));
 
 // Routes
 app.use('/', indexRouter);

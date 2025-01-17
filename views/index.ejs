@@ -11,11 +11,15 @@
       <%- include('./partials/about.ejs') %>
       <%- include('./partials/services.ejs') %>
       <%- include('./partials/recommendations.ejs', { data: data }) %>
-      <!-- Pass cakes data to portfolio partial -->
       <%- include('./partials/portfolio.ejs', { cakes: cakes }) %>
       <%- include('./partials/contact.ejs') %>
     </div>
     <%- include('./partials/script.ejs') %>
+
+    <!-- Include Portfolio JS -->
+    <script src="/js/portfolioRequest.js"></script>
+
+    <!-- Initialize Typed.js -->
     <script>
       var typed = new Typed(".aboutMe", {
         strings: <%- JSON.stringify(array) %>,
@@ -24,10 +28,11 @@
         backSpeed: 100,
         loop: true,
         loopCount: Infinity,
-        startDelay: 1000
+        startDelay: 1000,
       });
     </script>
   </body>
 </html>
+
 
 
